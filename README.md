@@ -1,7 +1,6 @@
 # Railway SSH Dashboard Proxy
 
-A tiny Railway app that exposes a dashboard running on a Google Cloud VM without moving the dashboard, database, files,
-or app logic.
+A tiny Railway app that exposes a dashboard running on a Google Cloud VM without moving the dashboard, database, files, or app logic.
 
 ```text
 Public Railway URL
@@ -30,6 +29,7 @@ SSH_PORT=22
 BASIC_AUTH_USER=<choose-a-username>
 BASIC_AUTH_PASSWORD=<choose-a-long-password>
 ```
+
 Optional but recommended:
 
 ```bash
