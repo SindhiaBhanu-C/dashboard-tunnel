@@ -19,7 +19,7 @@ const config = {
   sshHost: required('SSH_HOST'),
   sshUser: required('SSH_USER'),
   sshPort: Number(env.SSH_PORT || 22),
-  sshPrivateKey: required('SSH_PRIVATE_KEY'),
+  sshPrivateKey: requiredPrivateKey(),
   sshKnownHosts: env.SSH_KNOWN_HOSTS || '',
   reconnectMs: Number(env.SSH_RECONNECT_MS || 5000),
 };
@@ -30,6 +30,13 @@ function required(name) {
     process.exit(1);
   }
   return env[name];
+}
+
+function requiredPrivateKey() {
+  if (env.SSH_PRIVATE_KEY_B64) {
+    return Buffer.from(env.SSH_PRIVATE_KEY_B64, 'base64').toString('utf8');
+  }
+  return required('SSH_PRIVATE_KEY');
 }
 
 const workDir = mkdtempSync(join(tmpdir(), 'railway-ssh-proxy-'));
