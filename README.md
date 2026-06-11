@@ -25,9 +25,6 @@ LOCAL_TUNNEL_HOST=127.0.0.1
 LOCAL_TUNNEL_PORT=9000
 SSH_PORT=22
 
-# Strongly recommended: password protect the public URL.
-BASIC_AUTH_USER=<choose-a-username>
-BASIC_AUTH_PASSWORD=<choose-a-long-password>
 ```
 
 Optional but recommended:
@@ -93,7 +90,7 @@ https://YOUR-RAILWAY-URL/healthz
 
 ## Security notes
 
+- The Railway URL is intentionally public. Authentication/authorization should be handled by the dashboard application itself.
 - Use a dedicated SSH key for this proxy only.
 - Use a VM user with minimal permissions if possible.
-- Keep `BASIC_AUTH_USER` and `BASIC_AUTH_PASSWORD` enabled.
 - Do not expose the dashboard directly from GCP if you only want access through Railway.
