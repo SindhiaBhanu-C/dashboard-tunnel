@@ -66,6 +66,8 @@ function startTunnel() {
     '-N',
     '-T',
     '-o', 'ExitOnForwardFailure=yes',
+    '-o', 'BatchMode=yes',
+    '-o', 'ConnectTimeout=15',
     '-o', 'ServerAliveInterval=30',
     '-o', 'ServerAliveCountMax=3',
     '-o', 'TCPKeepAlive=yes',
