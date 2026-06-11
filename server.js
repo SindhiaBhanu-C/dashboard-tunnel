@@ -110,6 +110,7 @@ function startTunnel() {
   console.log(`[ssh] starting tunnel ${config.localTunnelHost}:${config.localTunnelPort} -> ${config.remoteDashboardHost}:${config.remoteDashboardPort} via ${config.sshUser}@${config.sshHost}:${config.sshPort}`);
 
   sshProc = spawn('ssh', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+
   sshProc.stdout.on('data', (data) => console.log(`[ssh stdout] ${data.toString().trim()}`));
   sshProc.stderr.on('data', (data) => console.error(`[ssh stderr] ${data.toString().trim()}`));
 
