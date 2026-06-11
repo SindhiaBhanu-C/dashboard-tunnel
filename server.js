@@ -6,7 +6,6 @@ const { spawn } = require('child_process');
 const { mkdtempSync, chmodSync, writeFileSync } = require('fs');
 const { tmpdir } = require('os');
 const { join } = require('path');
-const crypto = require('crypto');
 const httpProxy = require('http-proxy');
 
 const env = process.env;
@@ -22,8 +21,6 @@ const config = {
   sshPort: Number(env.SSH_PORT || 22),
   sshPrivateKey: required('SSH_PRIVATE_KEY'),
   sshKnownHosts: env.SSH_KNOWN_HOSTS || '',
-  basicAuthUser: env.BASIC_AUTH_USER || '',
-  basicAuthPassword: env.BASIC_AUTH_PASSWORD || '',
   reconnectMs: Number(env.SSH_RECONNECT_MS || 5000),
 };
 
@@ -33,33 +30,6 @@ function required(name) {
     process.exit(1);
   }
   return env[name];
-}
-
-function safeEqual(a, b) {
-  const aa = Buffer.from(a || '');
-  const bb = Buffer.from(b || '');
-  return aa.length === bb.length && crypto.timingSafeEqual(aa, bb);
-}
-
-function authOk(req) {
-  if (!config.basicAuthUser && !config.basicAuthPassword) return true;
-
-  const header = req.headers.authorization || '';
-  if (!header.startsWith('Basic ')) return false;
-
-  let decoded = '';
-  try {
-    decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
-  } catch {
-    return false;
-  }
-
-  const idx = decoded.indexOf(':');
-  if (idx === -1) return false;
-
-  const user = decoded.slice(0, idx);
-  const pass = decoded.slice(idx + 1);
-  return safeEqual(user, config.basicAuthUser) && safeEqual(pass, config.basicAuthPassword);
 }
 
 const workDir = mkdtempSync(join(tmpdir(), 'railway-ssh-proxy-'));
@@ -110,6 +80,13 @@ function startTunnel() {
   console.log(`[ssh] starting tunnel ${config.localTunnelHost}:${config.localTunnelPort} -> ${config.remoteDashboardHost}:${config.remoteDashboardPort} via ${config.sshUser}@${config.sshHost}:${config.sshPort}`);
 
   sshProc = spawn('ssh', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+
+  sshProc.on('error', (err) => {
+    console.error(`[ssh] failed to start: ${err.message}`);
+    sshProc = null;
+    tunnelReady = false;
+    if (!stopping) scheduleReconnect();
+  });
 
   sshProc.stdout.on('data', (data) => console.log(`[ssh stdout] ${data.toString().trim()}`));
   sshProc.stderr.on('data', (data) => console.error(`[ssh stderr] ${data.toString().trim()}`));
@@ -181,24 +158,10 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (!authOk(req)) {
-    res.writeHead(401, {
-      'www-authenticate': 'Basic realm="Lightship Dashboard"',
-      'content-type': 'text/plain; charset=utf-8',
-    });
-    res.end('Authentication required\n');
-    return;
-  }
-
   proxy.web(req, res);
 });
 
 server.on('upgrade', (req, socket, head) => {
-  if (!authOk(req)) {
-    socket.write('HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Basic realm="Lightship Dashboard"\r\n\r\n');
-    socket.destroy();
-    return;
-  }
   proxy.ws(req, socket, head);
 });
 
